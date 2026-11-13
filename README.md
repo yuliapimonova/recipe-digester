@@ -125,7 +125,7 @@ Serves 6 · Total 150 min
 For Linux, Intel Macs, or if you'd like to change the code. You need Python 3.10 or newer.
 
 ```sh
-git clone https://github.com/<you>/recipe-digester.git
+git clone https://github.com/yuliapimonova/recipe-digester.git
 cd recipe-digester
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
