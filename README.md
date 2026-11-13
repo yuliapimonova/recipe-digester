@@ -23,47 +23,52 @@ English and Russian are supported for now. A recipe is kept in the language it w
 - **Duplicates.** Warns you if a recipe with the same title and link is already saved.
 - **Saving.** Each recipe becomes a Markdown file in a folder you choose, and can also go to Notion.
 
-## What you need
+## Getting started
 
-- Python 3.10 or newer
-- One of these:
-  - **A free Gemini API key.** This is the default and costs nothing. See [Getting a Gemini key](#getting-a-gemini-key) below.
-  - **A Claude subscription that includes [Claude Code](https://claude.com/claude-code).** See [Using Claude instead](#optional-using-claude-instead) below.
+### 1. Download the app
 
-## Setup
+Download the latest version from the [Releases page](../../releases/latest):
 
-### Getting a Gemini key
+- **Mac:** `Recipe-Digester-macOS.zip`, for Macs with Apple silicon (M1 or newer). Unzip it and move **Recipe Digester** to your Applications folder.
+- **Windows:** `Recipe-Digester-Windows.zip`. Unzip it anywhere and open **Recipe Digester.exe** inside the folder.
+
+Double-click the app. It opens in your web browser; there's no separate window. If the page ever closes, open the app again and it brings the page back. To stop it, choose **Settings → Quit app**.
+
+#### The first time you open it
+
+The app isn't signed with a paid Apple or Microsoft developer certificate, so both systems warn you the first time. This is expected for small free apps.
+
+- **Mac:** macOS says it can't verify the app. Click **Done**, then open **System Settings → Privacy & Security**, scroll down to the message about Recipe Digester, click **Open Anyway** and confirm with your password. You only do this once. Apple explains the steps in [Open a Mac app from an unknown developer](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unknown-developer-mh40616/mac).
+- **Windows:** a blue "Windows protected your PC" box appears. Click **More info**, then **Run anyway**.
+
+### 2. Get a free Gemini key
+
+The app opens on its Settings panel the first time. It needs a Gemini key, which is free:
 
 1. If you don't have a Google account, [create one](https://accounts.google.com/signup).
 2. Open [Google AI Studio's API keys page](https://aistudio.google.com/apikey), sign in and choose **Create API key**. No payment details are needed for the free tier.
-3. Copy the key. You'll paste it into `.env` in the next step. Keep it to yourself, like a password.
+3. Copy the key, paste it into **Gemini API key** in the app's Settings and click **Save settings**. The app checks the key with Google straight away.
 
-Google's own guide, [Using Gemini API keys](https://ai.google.dev/gemini-api/docs/api-key), covers this in more detail. The free tier's limits are listed under [Rate limits](https://ai.google.dev/gemini-api/docs/rate-limits).
+Keep the key to yourself, like a password. It's stored only on your computer. Google's guide, [Using Gemini API keys](https://ai.google.dev/gemini-api/docs/api-key), has more detail, and the free tier's limits are listed under [Rate limits](https://ai.google.dev/gemini-api/docs/rate-limits).
 
-### Installing the app
+### 3. Get your first recipe
 
-```sh
-git clone https://github.com/<you>/recipe-digester.git
-cd recipe-digester
-python3 -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env             # Windows: copy .env.example .env
-```
+Paste a recipe link or a YouTube link, or add a screenshot, and click **Get recipe**. Check what came back, fix anything you like, and click **Save recipe**.
 
-Open `.env` and paste your Gemini key after `GEMINI_API_KEY=`. If you'll only use Claude, leave it empty. Then start the app:
+Recipes are saved to **Documents/Recipes** unless you choose another folder in Settings, such as an Obsidian vault.
 
-```sh
-python app.py
-```
+### Optional: Notion
 
-and open <http://127.0.0.1:5002> in your browser.
+You need a [Notion](https://www.notion.com) account; the free plan is enough. The app connects through a Notion *integration*, a private key that can only see the pages you share with it.
 
-Recipes are saved to the `recipes` folder inside the project. To keep them somewhere else, such as an Obsidian vault, set `RECIPES_DIR` in `.env`.
+1. Create an internal integration at [notion.so/profile/integrations](https://www.notion.so/profile/integrations) and copy its secret. Notion's guide: [Create integrations with the Notion API](https://www.notion.com/help/create-integrations-with-the-notion-api).
+2. In Notion, open the page where your recipes should live, choose ••• → Connections, and add your integration. Notion's guide: [Add and manage connections](https://www.notion.com/help/add-and-manage-connections-with-the-api).
+3. In the app's Settings, paste the secret and the page's link, then click **Save settings**. The app creates a Recipes database in that page. If you already have a recipe database with the properties Name, Link, Tags, Ingredients and Description, paste its link instead.
+4. An **Also export to Notion** checkbox now appears next to **Save recipe**. Untick it whenever you only want the file.
 
-### Optional: using Claude instead
+### Optional: using Claude instead of Gemini
 
-The app has no sign-in of its own. It uses [Claude Code](https://claude.com/claude-code), Anthropic's command-line tool, logged in to your own Claude account on the same computer. When Claude Code is missing, picking a Claude model shows "Claude is only supported with Claude Code".
+The app has no sign-in of its own for Claude. It uses [Claude Code](https://claude.com/claude-code), Anthropic's command-line tool, logged in to your own Claude account on the same computer. When Claude Code is missing, picking a Claude model shows "Claude is only supported with Claude Code".
 
 1. Check that your plan includes Claude Code: see [Plans & pricing](https://claude.com/pricing) and [Using Claude Code with your plan](https://support.claude.com/en/articles/11145838-using-claude-code-with-your-pro-or-max-plan). The free plan doesn't include it.
 2. Install Claude Code. On macOS and Linux:
@@ -74,24 +79,9 @@ The app has no sign-in of its own. It uses [Claude Code](https://claude.com/clau
 
    For Windows and other options, follow Anthropic's [Claude Code quickstart](https://code.claude.com/docs/en/quickstart).
 3. Run `claude` once in a terminal and log in with your Claude account when it asks. You can close it afterwards; it stays logged in.
-4. Restart the app and choose **Claude Sonnet** or **Claude Opus** next to **Get recipe**. To make Claude the default, set `DEFAULT_MODEL=sonnet` in `.env`.
+4. Quit and reopen Recipe Digester, then choose **Claude Sonnet** or **Claude Opus** next to **Get recipe**.
 
 Usage counts against your plan's normal limits, so there's no separate bill. The app deliberately ignores any Anthropic API key set on your computer, so it can't run up API charges by accident. With Claude, YouTube recipes come from the video's transcript, which YouTube sometimes blocks for a while; see [Good to know](#good-to-know).
-
-### Optional: Notion
-
-You need a [Notion](https://www.notion.com) account; the free plan is enough. The app connects through a Notion *integration*, a private key that can only see the pages you share with it.
-
-1. Create an internal integration at [notion.so/profile/integrations](https://www.notion.so/profile/integrations) and copy its secret into `.env` as `NOTION_TOKEN`. Notion's guide: [Create integrations with the Notion API](https://www.notion.com/help/create-integrations-with-the-notion-api).
-2. In Notion, open the page where the recipe database should live, choose ••• → Connections, and add your integration. Notion's guide: [Add and manage connections](https://www.notion.com/help/add-and-manage-connections-with-the-api).
-3. Run `python setup_notion.py <link to that page>`. It creates a Recipes database there and prints a `NOTION_DATABASE_ID=` line for your `.env`.
-4. Restart the app. An "Also export to Notion" checkbox appears next to Save.
-
-If you already have a database, put its link in `NOTION_DATABASE_ID` and run `python setup_notion.py` with no link to check that it has the right properties: Name, Link, Tags, Ingredients and Description.
-
-### Optional: a Dock icon on macOS
-
-Run `./make_app.sh`. It builds `Recipe Digester.app` in the project folder. Drag it to Applications or the Dock. Clicking it starts the app in the background, if it isn't running already, and opens it in your browser. Server messages go to `server.log`.
 
 ## The recipe files
 
@@ -128,17 +118,36 @@ Serves 6 · Total 150 min
 - **YouTube with Claude** works from the video's transcript instead. YouTube sometimes blocks transcript requests for a while; Gemini isn't affected.
 - **Some sites block apps.** If a page can't be read, take a screenshot of the recipe instead.
 - **Personal use.** The app saves recipes for your own cooking. Respect the terms of the sites and videos you use it with.
+- **Where things are kept.** Settings, including your keys, are stored in `~/Library/Application Support/Recipe Digester` on a Mac and `%APPDATA%\Recipe Digester` on Windows, next to a log file that helps when something goes wrong.
+
+## Running from source
+
+For Linux, Intel Macs, or if you'd like to change the code. You need Python 3.10 or newer.
+
+```sh
+git clone https://github.com/<you>/recipe-digester.git
+cd recipe-digester
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
+```
+
+The app opens at <http://127.0.0.1:5002>. You can use the Settings panel, or copy `.env.example` to `.env` and fill it in; a `.env` file takes priority. `python setup_notion.py` checks a Notion database from the command line. For auto-reload while editing, run `flask --app app run --debug --port 5002`.
+
+To build the downloadable app yourself, run `pip install pyinstaller` and then `pyinstaller recipe-digester.spec`. Pushing a version tag such as `v1.0.0` to GitHub builds the Mac and Windows downloads and attaches them to a release (see `.github/workflows/release.yml`).
 
 ## Built with
 
 | Library | Used for | License |
 |---|---|---|
 | [Flask](https://flask.palletsprojects.com/) | the local web server | BSD-3-Clause |
-| [python-dotenv](https://github.com/theskumar/python-dotenv) | reading `.env` | BSD-3-Clause |
+| [python-dotenv](https://github.com/theskumar/python-dotenv) | reading and saving settings | BSD-3-Clause |
 | [Pillow](https://python-pillow.github.io/) | shrinking large images | MIT-CMU |
 | [yt-dlp](https://github.com/yt-dlp/yt-dlp) | YouTube titles and descriptions | Unlicense |
 | [youtube-transcript-api](https://github.com/jdepoix/youtube-transcript-api) | YouTube transcripts | MIT |
 | [notion-client](https://github.com/ramnes/notion-sdk-py) | Notion export | MIT |
+| [PyInstaller](https://pyinstaller.org/) | packaging the downloadable app; its small launcher is part of it | GPL-2.0-or-later with a bootloader exception that allows this for apps under any license |
 
 The AI work is done by the [Gemini API](https://ai.google.dev/) or [Claude Code](https://claude.com/claude-code). Each comes with its own terms, which you accept when you get a key or log in.
 

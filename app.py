@@ -18,7 +18,9 @@ URL = f"http://127.0.0.1:{PORT}"
 
 settings.load()
 
-app = Flask(__name__)
+# In the downloadable app, files bundled with the code live in a folder PyInstaller sets as sys._MEIPASS.
+BUNDLE = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
+app = Flask(__name__, static_folder=BUNDLE / "static")
 
 
 def has_claude_code() -> bool:
@@ -187,6 +189,10 @@ if __name__ == "__main__":
     if already_running():
         webbrowser.open(URL)
         sys.exit()
+    if getattr(sys, "frozen", False):
+        # The downloadable app has no terminal window, so keep its messages in a log next to the settings.
+        settings.folder().mkdir(parents=True, exist_ok=True)
+        sys.stdout = sys.stderr = open(settings.folder() / "app.log", "a", buffering=1, encoding="utf-8")
     threading.Timer(1, webbrowser.open, [URL]).start()
     # Port 5000 is often taken by AirPlay on macOS. For auto-reload while developing: flask --app app run --debug --port 5002
     app.run(port=PORT)

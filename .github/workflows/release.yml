@@ -1,0 +1,42 @@
+# Pushing a tag like v1.0.0 builds the Mac and Windows apps and attaches them to a GitHub release.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  build:
+    needs: release
+    strategy:
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt pyinstaller==6.22.3
+      - run: pyinstaller --noconfirm recipe-digester.spec
+      - name: Zip the Mac app
+        if: runner.os == 'macOS'
+        run: ditto -c -k --keepParent "dist/Recipe Digester.app" Recipe-Digester-macOS.zip
+      - name: Zip the Windows app
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path "dist/Recipe Digester" -DestinationPath Recipe-Digester-Windows.zip
+      - run: gh release upload "$GITHUB_REF_NAME" Recipe-Digester-*.zip --clobber
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}

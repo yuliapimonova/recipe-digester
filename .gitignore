@@ -9,3 +9,5 @@ recipes/
 *.app/
 CLAUDE.md
 .claude/
+build/
+dist/
