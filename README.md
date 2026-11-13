@@ -4,15 +4,24 @@ A small app that runs on your own computer. Give it a recipe page, a few screens
 
 ![The app with a recipe ready to save](docs/screenshot.png)
 
-## What it does
+## Capabilities
 
-- **Recipe pages.** Most recipe sites include the recipe in a machine-readable form, which the app reads directly. For other pages, an AI model reads the page text.
-- **Screenshots and photos.** Add one or more images of the same recipe. You can also paste or drag them onto the page. Large images are shrunk automatically.
-- **YouTube.** With Gemini, the model watches the video itself. A video with several recipes gives you each one separately.
+### What you can give it
+
+- **A direct link to a recipe page.** Most recipe sites include the recipe in a machine-readable form, which the app reads directly. For other pages, an AI model reads the page text.
+- **Screenshots or photos.** Add one or more images of the same recipe, from a cookbook page, a social media post or a screenshot of a site. You can also paste them or drag them onto the page. Large images are shrunk automatically.
+- **A YouTube link.** With Gemini, the model watches the video itself. A video with several recipes gives you each one separately.
+
+### Languages
+
+English and Russian are supported for now. A recipe is kept in the language it was written in, and its summary and suggested tags are written in that language too. The Translate button turns a recipe into the other language, or into any language you type, keeping every number and quantity exactly as it was. You can switch back to the original at any time.
+
+### What it does with the recipe
+
 - **Cut the fluff.** Removes chatter and filler from the steps and notes. It only ever deletes text, never rewrites it, and it doesn't touch the ingredients.
-- **Translate.** Translates a recipe into any language, keeping every number as it was. You can switch back to the original.
-- **Tags.** Suggests tags you've already used, plus a few new ones you can tick.
+- **Tags.** Suggests tags you've already used, plus a few new ones you can tick. Tags are translated along with the recipe.
 - **Duplicates.** Warns you if a recipe with the same title and link is already saved.
+- **Saving.** Each recipe becomes a Markdown file in a folder you choose, and can also go to Notion.
 
 ## What you need
 
