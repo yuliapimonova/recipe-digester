@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe Digester</title>
+  <link rel="icon" href="/static/icon.png">
+  <!-- Applied before the page draws, so a saved theme doesn't flash the other one first. -->
+  <script>try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch {}</script>
+  <style>
+    /* Colours are taken from the logo. */
+    :root {
+      --ink: #17163a;
+      --muted: #5d5c78;
+      --line: #dcdce6;
+      --paper: #ffffff;
+      --field: #f7f7fa;
+      --green: #1f9d7b;
+      --green-dark: #17805f;
+      --purple: #5a57dd;
+      --purple-soft: #ecebfc;
+      --error: #b3261e;
+      --radius: 2px;
+      /* The only three font sizes on the page. */
+      --size-large: 1.5rem;
+      --size-normal: 1rem;
+      --size-small: 0.875rem;
+      --control-height: 2.5rem;
+      --control-width: 9.5rem;
+      color-scheme: light;
+    }
+    /* Night colours: follow the system unless the switch has picked a theme. */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --ink: #e9e9f2;
+        --muted: #a3a2bb;
+        --line: #34334f;
+        --paper: #121126;
+        --field: #1b1a33;
+        --green: #2bb38e;
+        --green-dark: #23977a;
+        --purple: #8c89f0;
+        --purple-soft: #26244d;
+        --error: #f2867d;
+        color-scheme: dark;
+      }
+    }
+    :root[data-theme="dark"] {
+      --ink: #e9e9f2;
+      --muted: #a3a2bb;
+      --line: #34334f;
+      --paper: #121126;
+      --field: #1b1a33;
+      --green: #2bb38e;
+      --green-dark: #23977a;
+      --purple: #8c89f0;
+      --purple-soft: #26244d;
+      --error: #f2867d;
+      color-scheme: dark;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      margin: 0 auto; padding: 2.5rem 1rem 4rem; max-width: 46rem;
+      font: 400 var(--size-normal)/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink); background: var(--paper);
+    }
+    header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem; }
+    /* The logo file is square with empty space above and below the drawing. */
+    header img { width: 5.5rem; height: 2.75rem; object-fit: cover; }
+    h1 { margin: 0; font-size: var(--size-large); letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); }
+    #theme { margin-left: auto; align-self: flex-start; }
+
+    input, textarea, select {
+      width: 100%; padding: 0.55rem 0.7rem; font: inherit; color: inherit;
+      background: var(--field); border: 1px solid var(--line); border-radius: var(--radius);
+    }
+    textarea { resize: vertical; }
+
+    /* Thin scrollbars in the page colours. The first rule is for Chrome, Edge and Firefox; the second for Safari. */
+    html { scroll-behavior: smooth; }
+    * { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--line); border: 3px solid transparent; border-radius: 10px; background-clip: padding-box; }
+    ::-webkit-scrollbar-thumb:hover { background-color: var(--muted); }
+    input:focus, textarea:focus, select:focus, button:focus-visible, .button:focus-within {
+      outline: 2px solid var(--purple); outline-offset: 1px;
+    }
+
+    /* Every button, select and short input in a row shares one height, and buttons one minimum width. */
+    button, .button {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: var(--control-height); min-width: var(--control-width); padding: 0 1rem;
+      font: inherit; font-weight: 500; white-space: nowrap;
+      color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer;
+    }
+    button:hover, .button:hover { border-color: var(--muted); }
+    button:disabled { opacity: 0.55; cursor: default; }
+    button.primary { color: #fff; background: var(--green); border-color: var(--green); }
+    button.primary:hover:not(:disabled) { background: var(--green-dark); }
+
+    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.75rem; }
+    .controls select, .controls input { width: auto; height: var(--control-height); padding-top: 0; padding-bottom: 0; }
+    .controls select { width: var(--control-width); }
+    .hint { color: var(--muted); font-size: var(--size-small); }
+    label.button { margin: 0; font-size: var(--size-normal); }
+    #files { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    #status { min-height: 1.5em; margin: 1rem 0 0; color: var(--muted); }
+    #status.error { color: var(--error); }
+
+    #tabs { margin-top: 2rem; }
+    #tabs button:disabled { opacity: 1; color: var(--purple); border-color: var(--purple); background: var(--purple-soft); }
+
+    #preview { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
+    label { display: block; margin-top: 1rem; font-size: var(--size-small); font-weight: 600; }
+    label > input, label > textarea { display: block; margin-top: 0.3rem; font-size: var(--size-normal); font-weight: 400; }
+    #title { font-weight: 600; }
+    .row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+    @media (max-width: 34rem) { .row { grid-template-columns: repeat(2, 1fr); } }
+    #target { width: var(--control-width); }
+
+    .tools { padding-bottom: 1rem; border-bottom: 1px solid var(--line); }
+
+    .tag-group { margin-top: 1rem; }
+    .tag-group strong { display: block; margin-bottom: 0.4rem; font-size: var(--size-small); }
+    .tag-group label { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0 1.25rem 0.4rem 0; font-weight: 400; cursor: pointer; }
+    .tag-group label:has(input:checked) { color: var(--purple); }
+    .tag-group input { width: auto; height: auto; margin: 0; accent-color: var(--purple); }
+
+    .save { margin-top: 1.5rem; }
+    #notion-option { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0 0 0 0.5rem; font-weight: 400; font-size: var(--size-normal); }
+    #notion-option input { width: auto; height: auto; margin: 0; accent-color: var(--green); }
+    #save-result { color: var(--muted); overflow-wrap: anywhere; }
+    a { color: var(--purple); }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="/static/icon.png" alt="">
+    <div>
+      <h1>Recipe Digester</h1>
+      <p>Turns a recipe page, screenshot or cooking video into a clean recipe file.</p>
+    </div>
+    <button id="theme" type="button"></button>
+  </header>
+
+  <textarea id="source" rows="2" placeholder="Paste a link to a recipe page or YouTube video" aria-label="Recipe link"></textarea>
+  <div class="controls">
+    <label class="button" for="files">Add images</label>
+    <input id="files" type="file" accept="image/*" multiple>
+    <span class="hint">or paste or drop screenshots anywhere on the page</span>
+    <button id="clear-images" hidden>Clear images</button>
+  </div>
+  <p id="image-list" class="hint" hidden></p>
+  <div class="controls">
+    <button id="extract" class="primary">Get recipe</button>
+    <select id="model" aria-label="Model"></select>
+  </div>
+  <p id="status" role="status"></p>
+
+  <div id="tabs" class="controls" hidden></div>
+
+  <form id="preview" hidden>
+    <label>Title <input id="title"></label>
+    <label>Description <textarea id="summary" rows="2"></textarea></label>
+    <div class="row">
+      <label>Servings <input id="servings"></label>
+      <label>Prep, min <input id="prep_min" type="number" min="0"></label>
+      <label>Cook, min <input id="cook_min" type="number" min="0"></label>
+      <label>Total, min <input id="total_min" type="number" min="0"></label>
+    </div>
+    <label>Ingredients <textarea id="ingredients" rows="10"></textarea></label>
+    <label>Steps <textarea id="steps" rows="12"></textarea></label>
+    <label>Notes <textarea id="notes" rows="4"></textarea></label>
+
+    <div class="controls">
+      <button id="cut-fluff" type="button">Cut the fluff</button>
+      <button id="undo-cut" type="button" hidden>Undo</button>
+    </div>
+    <div class="controls tools">
+      <button id="translate" type="button">Translate</button>
+      <span class="hint">to</span>
+      <input id="target" list="languages" value="English" aria-label="Translate to">
+      <datalist id="languages">
+        <option value="English"></option>
+        <option value="Russian"></option>
+        <option value="Spanish"></option>
+        <option value="French"></option>
+        <option value="German"></option>
+        <option value="Italian"></option>
+      </datalist>
+      <button id="show-version" type="button" hidden></button>
+    </div>
+
+    <div id="tag-groups"></div>
+
+    <div class="controls save">
+      <button id="save" type="button" class="primary">Save recipe</button>
+      <button id="save-anyway" type="button" hidden>Save anyway</button>
+      <label id="notion-option" hidden><input id="to-notion" type="checkbox" checked> Also export to Notion</label>
+    </div>
+    <p id="save-result"></p>
+  </form>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

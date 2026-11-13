@@ -1,0 +1,6 @@
+flask
+python-dotenv
+pillow
+yt-dlp
+youtube-transcript-api
+notion-client

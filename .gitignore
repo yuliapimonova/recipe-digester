@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.DS_Store
+*.log
+.claude/settings.local.json
+recipes/
+*.app/
+CLAUDE.md
+.claude/
