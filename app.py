@@ -1,22 +1,29 @@
 import os
-import shutil
+import socket
+import sys
+import threading
+import webbrowser
+from pathlib import Path
 
-from dotenv import load_dotenv
 from flask import Flask, request
 
 import extract
 import library
 import notion
+import settings
 import sources
 
-load_dotenv()
+PORT = 5002
+URL = f"http://127.0.0.1:{PORT}"
+
+settings.load()
 
 app = Flask(__name__)
 
 
 def has_claude_code() -> bool:
     """The Claude models run through Claude Code on this computer, logged in to the user's own plan."""
-    return shutil.which("claude") is not None
+    return extract.claude_path() is not None
 
 
 def default_model() -> str:
@@ -50,7 +57,56 @@ def config():
         "default": default_model(),
         "claude_error": None if has_claude_code() else extract.CLAUDE_CODE_ONLY,
         "notion": notion.configured(),
+        "setup_needed": not os.getenv("GEMINI_API_KEY") and not has_claude_code(),
     }
+
+
+def settings_state() -> dict:
+    """What the Settings panel shows. Secrets are never sent back, only whether they are saved."""
+    return {
+        "gemini_key": bool(os.getenv("GEMINI_API_KEY")),
+        "recipes_dir": str(library.folder_path()),
+        "notion_token": bool(os.getenv("NOTION_TOKEN")),
+        "notion_database": os.getenv("NOTION_DATABASE_ID") or "",
+    }
+
+
+@app.get("/api/settings")
+def get_settings():
+    return settings_state()
+
+
+@app.post("/api/settings")
+def save_settings():
+    body = request.get_json()
+    updates = {}
+    if key := body.get("gemini_key", "").strip():
+        extract.check_gemini_key(key)
+        updates["GEMINI_API_KEY"] = key
+    if folder := body.get("recipes_dir", "").strip():
+        path = Path(folder).expanduser()
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            raise ValueError(f"Can't use that folder: {e.strerror}.")
+        updates["RECIPES_DIR"] = str(path)
+    token = body.get("notion_token", "").strip()
+    if link := body.get("notion_link", "").strip():
+        updates["NOTION_DATABASE_ID"] = notion.connect(link, token or None)
+    if token:
+        updates["NOTION_TOKEN"] = token
+    if body.get("disconnect_notion"):
+        updates.update(NOTION_TOKEN="", NOTION_DATABASE_ID="")
+    settings.save(updates)
+    notion.data_source_id.cache_clear()
+    return settings_state()
+
+
+@app.post("/api/quit")
+def quit_app():
+    # Let this response reach the page before the process ends.
+    threading.Timer(0.5, os._exit, [0]).start()
+    return {}
 
 
 def find_recipes(url: str, images: list, model: str) -> list[dict]:
@@ -121,6 +177,16 @@ def export_to_notion():
         return {"error": str(e)}, 422
 
 
+def already_running() -> bool:
+    with socket.socket() as probe:
+        return probe.connect_ex(("127.0.0.1", PORT)) == 0
+
+
 if __name__ == "__main__":
+    # Opening the app a second time just shows the copy that is already running.
+    if already_running():
+        webbrowser.open(URL)
+        sys.exit()
+    threading.Timer(1, webbrowser.open, [URL]).start()
     # Port 5000 is often taken by AirPlay on macOS. For auto-reload while developing: flask --app app run --debug --port 5002
-    app.run(port=5002)
+    app.run(port=PORT)

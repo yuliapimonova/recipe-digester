@@ -71,7 +71,14 @@
     header img { width: 5.5rem; height: 2.75rem; object-fit: cover; }
     h1 { margin: 0; font-size: var(--size-large); letter-spacing: -0.01em; }
     header p { margin: 0; color: var(--muted); }
-    #theme { margin-left: auto; align-self: flex-start; }
+    .header-buttons { display: flex; gap: 0.5rem; margin-left: auto; align-self: flex-start; }
+    h2 { margin: 0; font-size: var(--size-normal); }
+    #settings { margin-bottom: 2rem; padding: 1.25rem; border: 1px solid var(--line); border-radius: var(--radius); }
+    #settings .hint { margin: 0.3rem 0 0; }
+    #welcome { margin: 0.5rem 0 0; }
+    #settings-status { margin: 0.75rem 0 0; color: var(--muted); }
+    #settings-status.error { color: var(--error); }
+    .push { margin-left: auto; }
 
     input, textarea, select {
       width: 100%; padding: 0.55rem 0.7rem; font: inherit; color: inherit;
@@ -144,8 +151,29 @@
       <h1>Recipe Digester</h1>
       <p>Turns a recipe page, screenshot or cooking video into a clean recipe file.</p>
     </div>
-    <button id="theme" type="button"></button>
+    <div class="header-buttons">
+      <button id="settings-button" type="button">Settings</button>
+      <button id="theme" type="button"></button>
+    </div>
   </header>
+
+  <section id="settings" hidden>
+    <h2>Settings</h2>
+    <p id="welcome" hidden>Welcome! To get started, paste a free Gemini key below. Getting one takes about a minute.</p>
+    <label>Gemini API key <input id="gemini-key" type="password" autocomplete="off" spellcheck="false"></label>
+    <p class="hint"><a href="https://aistudio.google.com/apikey" target="_blank">Get a free key from Google AI Studio</a>: sign in with a Google account and choose Create API key.</p>
+    <label>Save recipes to <input id="recipes-dir" spellcheck="false"></label>
+    <label>Notion integration secret (optional) <input id="notion-token" type="password" autocomplete="off" spellcheck="false"></label>
+    <label>Notion page or database link (optional) <input id="notion-link" spellcheck="false"></label>
+    <p class="hint">Paste a page link and a Recipes database is created in that page. First <a href="https://www.notion.com/help/create-integrations-with-the-notion-api" target="_blank">create an integration</a>, then <a href="https://www.notion.com/help/add-and-manage-connections-with-the-api" target="_blank">connect it to the page</a>.</p>
+    <div class="controls">
+      <button id="save-settings" type="button" class="primary">Save settings</button>
+      <button id="close-settings" type="button">Close</button>
+      <button id="disconnect-notion" type="button" hidden>Disconnect Notion</button>
+      <button id="quit" type="button" class="push">Quit app</button>
+    </div>
+    <p id="settings-status" role="status"></p>
+  </section>
 
   <textarea id="source" rows="2" placeholder="Paste a link to a recipe page or YouTube video" aria-label="Recipe link"></textarea>
   <div class="controls">

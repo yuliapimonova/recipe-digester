@@ -5,11 +5,16 @@ import os
 import re
 from pathlib import Path
 
+DEFAULT_FOLDER = Path.home() / "Documents" / "Recipes"
 HEADER_FIELDS = ("title", "source", "tags", "servings", "prep_min", "cook_min", "total_min", "language", "added")
 
 
+def folder_path() -> Path:
+    return Path(os.getenv("RECIPES_DIR") or DEFAULT_FOLDER).expanduser()
+
+
 def folder() -> Path:
-    path = Path(os.getenv("RECIPES_DIR") or Path(__file__).parent / "recipes").expanduser()
+    path = folder_path()
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -74,7 +79,7 @@ def read_header(path: Path) -> dict:
 
 
 def headers() -> list[tuple[Path, dict]]:
-    return [(path, read_header(path)) for path in sorted(folder().glob("*.md"))]
+    return [(path, read_header(path)) for path in sorted(folder_path().glob("*.md"))]
 
 
 def existing_tags() -> list[str]:

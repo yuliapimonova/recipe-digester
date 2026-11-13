@@ -23,13 +23,83 @@ $("theme").addEventListener("click", () => {
   showThemeButton();
 });
 
-fetch("/api/config").then((r) => r.json()).then((c) => {
-  $("model").replaceChildren(...c.models.map((m) => new Option(m.name, m.id)));
-  $("model").value = c.default;
+// Run on page load, and again after settings change. The model menu is only filled the first time.
+async function loadConfig() {
+  const c = await (await fetch("/api/config")).json();
+  if (!$("model").options.length) {
+    $("model").replaceChildren(...c.models.map((m) => new Option(m.name, m.id)));
+    $("model").value = c.default;
+  }
   claudeError = c.claude_error;
   checkModel();
+  if ($("notion-option").hidden && c.notion) $("to-notion").checked = true;
   $("notion-option").hidden = !c.notion;
-  $("to-notion").checked = c.notion;
+  return c;
+}
+
+loadConfig().then((c) => {
+  if (c.setup_needed) {
+    $("welcome").hidden = false;
+    showSettings(true);
+  }
+});
+
+function setSettingsStatus(text, isError = false) {
+  $("settings-status").textContent = text;
+  $("settings-status").classList.toggle("error", isError);
+}
+
+async function loadSettings() {
+  const s = await (await fetch("/api/settings")).json();
+  $("gemini-key").value = "";
+  $("gemini-key").placeholder = s.gemini_key ? "Saved. Paste a new key to replace it." : "Paste your key here";
+  $("recipes-dir").value = s.recipes_dir;
+  $("notion-token").value = "";
+  $("notion-token").placeholder = s.notion_token ? "Saved. Paste a new secret to replace it." : "";
+  $("notion-link").value = "";
+  $("notion-link").placeholder = s.notion_database ? "Connected. Paste a link to use another page or database." : "https://www.notion.so/…";
+  $("disconnect-notion").hidden = !s.notion_token && !s.notion_database;
+}
+
+function showSettings(show) {
+  $("settings").hidden = !show;
+  setSettingsStatus("");
+  if (show) loadSettings();
+}
+
+$("settings-button").addEventListener("click", () => showSettings($("settings").hidden));
+$("close-settings").addEventListener("click", () => showSettings(false));
+
+async function saveSettings(body, doneText) {
+  $("save-settings").disabled = true;
+  setSettingsStatus(body.notion_link ? "Saving and connecting to Notion…" : "Saving…");
+  try {
+    await postJson("/api/settings", body);
+    await loadSettings();
+    await loadConfig();
+    $("welcome").hidden = true;
+    setSettingsStatus(doneText);
+  } catch (e) {
+    setSettingsStatus(e.message, true);
+  } finally {
+    $("save-settings").disabled = false;
+  }
+}
+
+$("save-settings").addEventListener("click", () => saveSettings({
+  gemini_key: $("gemini-key").value,
+  recipes_dir: $("recipes-dir").value,
+  notion_token: $("notion-token").value,
+  notion_link: $("notion-link").value,
+}, "Saved."));
+
+$("disconnect-notion").addEventListener("click", () => saveSettings({ disconnect_notion: true }, "Notion disconnected."));
+
+$("quit").addEventListener("click", async () => {
+  try {
+    await postJson("/api/quit", {});
+  } catch {}
+  document.body.replaceChildren("Recipe Digester has stopped. You can close this tab. Open the app again to start it.");
 });
 
 let claudeError = null;

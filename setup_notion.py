@@ -2,25 +2,21 @@
 
     python setup_notion.py               check the database in NOTION_DATABASE_ID
     python setup_notion.py <page link>   create a "Recipes" database inside that page
+                                         (the app's Settings panel does the same)
 """
 import sys
 
-from dotenv import load_dotenv
 from notion_client import APIResponseError
 
 import notion
+import settings
 
-load_dotenv()
+settings.load()
 
 
 def create(page_link: str) -> None:
-    database = notion.client().databases.create(
-        parent={"type": "page_id", "page_id": notion.notion_id(page_link)},
-        title=[{"type": "text", "text": {"content": "Recipes"}}],
-        initial_data_source={"properties": notion.PROPERTIES},
-    )
-    print("Created a Recipes database. Add this line to .env:")
-    print(f"NOTION_DATABASE_ID={database['id']}")
+    print("Recipe database ready. Add this line to .env:")
+    print(f"NOTION_DATABASE_ID={notion.connect(page_link)}")
 
 
 def check() -> None:

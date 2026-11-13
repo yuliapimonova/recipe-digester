@@ -2,11 +2,13 @@ import base64
 import io
 import json
 import os
+import shutil
 import subprocess
 import tempfile
 import time
 import urllib.error
 import urllib.request
+from pathlib import Path
 
 from PIL import Image, ImageOps
 
@@ -240,12 +242,36 @@ def run_gemini(content: list[dict], system_prompt: str, schema: dict) -> dict:
     return json.loads(text)
 
 
+def claude_path() -> str | None:
+    """Apps started from the Dock or Start menu don't see the terminal's PATH, so also look where installers put claude."""
+    candidates = [
+        Path.home() / ".local" / "bin" / "claude",
+        Path.home() / ".claude" / "local" / "claude",
+        Path("/opt/homebrew/bin/claude"),
+        Path("/usr/local/bin/claude"),
+    ]
+    return shutil.which("claude") or next((str(p) for p in candidates if p.is_file()), None)
+
+
+def check_gemini_key(key: str) -> None:
+    """Ask Google to list models with this key, which costs nothing, so a typo shows up straight away."""
+    request = urllib.request.Request(f"{GEMINI_URL}?pageSize=1", headers={"x-goog-api-key": key})
+    try:
+        urllib.request.urlopen(request, timeout=20).close()
+    except urllib.error.HTTPError as e:
+        if e.code in (400, 401, 403):
+            raise ValueError("Google didn't accept this Gemini key. Copy it again from Google AI Studio.")
+        raise ValueError(f"Couldn't check the Gemini key right now (HTTP {e.code}). Try again.")
+    except (urllib.error.URLError, TimeoutError):
+        raise ValueError("Couldn't reach Google to check the Gemini key. Are you online?")
+
+
 def run_claude(content: list[dict], model: str, system_prompt: str, schema: dict) -> dict:
     """Call the logged-in Claude Code CLI, so usage goes on the subscription."""
     message = {"type": "user", "message": {"role": "user", "content": content}}
     # No tools, MCP servers or project settings: faster, and page text can't trigger anything.
     command = [
-        "claude", "-p", "--model", model, "--tools", "", "--strict-mcp-config",
+        claude_path() or "claude", "-p", "--model", model, "--tools", "", "--strict-mcp-config",
         "--setting-sources", "", "--no-session-persistence",
         "--system-prompt", system_prompt, "--json-schema", json.dumps(schema),
         "--input-format", "stream-json", "--output-format", "stream-json", "--verbose",

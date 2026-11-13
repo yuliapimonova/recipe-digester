@@ -20,8 +20,8 @@ def configured() -> bool:
     return bool(os.getenv("NOTION_TOKEN") and os.getenv("NOTION_DATABASE_ID"))
 
 
-def client() -> Client:
-    token = os.getenv("NOTION_TOKEN")
+def client(token: str | None = None) -> Client:
+    token = token or os.getenv("NOTION_TOKEN")
     if not token:
         raise ValueError("NOTION_TOKEN is missing from .env.")
     return Client(auth=token)
@@ -47,6 +47,30 @@ def data_source_id() -> str:
         if e.status == 404:
             raise ValueError("Notion can't see your recipe database. Connect your integration to it (••• → Connections).")
         raise ValueError(f"Notion error: {e}")
+
+
+def connect(link: str, token: str | None = None) -> str:
+    """Use a database link as it is; for a page link, create a Recipes database in that page. Returns the database ID."""
+    notion, target = client(token), notion_id(link)
+    try:
+        try:
+            return notion.databases.retrieve(database_id=target)["id"]
+        except APIResponseError as e:
+            # A page ID gives 400 here; 404 can mean a page that isn't shared, which creating will report.
+            if e.status not in (400, 404):
+                raise
+        database = notion.databases.create(
+            parent={"type": "page_id", "page_id": target},
+            title=[{"type": "text", "text": {"content": "Recipes"}}],
+            initial_data_source={"properties": PROPERTIES},
+        )
+    except APIResponseError as e:
+        if e.status == 401:
+            raise ValueError("Notion didn't accept the token. Copy the integration's secret again.")
+        if e.status == 404:
+            raise ValueError("Notion can't see that page. Open it in Notion, then ••• → Connections → add your integration.")
+        raise ValueError(f"Notion error: {e}")
+    return database["id"]
 
 
 def existing_tags() -> list[str]:
